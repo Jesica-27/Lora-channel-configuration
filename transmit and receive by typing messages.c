@@ -17,25 +17,39 @@ void setup() {
 
   delay(1000);
 
-  Serial.println("================================");
-  Serial.println("     E220 TWO-WAY CHAT");
-  Serial.println("================================");
+  Serial.println();
+  Serial.println("==============================");
+  Serial.println("   E220 BIDIRECTIONAL TEST");
+  Serial.println("==============================");
 
   e220ttl.begin();
 
   delay(500);
 
-  Serial.println("LoRa Ready!");
+  Serial.println("Ready!");
   Serial.println("Type a message and press ENTER.");
-  Serial.println();
 }
 
 void loop() {
 
-  // ==========================================
-  // SEND MESSAGE
-  // ==========================================
+  // -----------------------------
+  // RECEIVE FROM OTHER NODE
+  // -----------------------------
+  if (e220ttl.available() > 1) {
 
+    ResponseContainer rc = e220ttl.receiveMessage();
+
+    if (rc.status.code == 1) {
+      Serial.print("Received: ");
+      Serial.println(rc.data);
+    } else {
+      Serial.println("Receive failed");
+    }
+  }
+
+  // -----------------------------
+  // SEND TO OTHER NODE
+  // -----------------------------
   if (Serial.available()) {
 
     String message = Serial.readStringUntil('\n');
@@ -45,36 +59,13 @@ void loop() {
 
       ResponseStatus rs = e220ttl.sendMessage(message);
 
-      Serial.print("You: ");
-      Serial.println(message);
-
       if (rs.code == 1) {
-        Serial.println("Message sent!");
+        Serial.print("Sent: ");
+        Serial.println(message);
       } else {
-        Serial.print("Send error: ");
+        Serial.print("Send failed: ");
         Serial.println(rs.getResponseDescription());
       }
-    }
-  }
-
-
-  // ==========================================
-  // RECEIVE MESSAGE
-  // ==========================================
-
-  if (e220ttl.available() > 1) {
-
-    ResponseContainer rc = e220ttl.receiveMessage();
-
-    if (rc.status.code == 1) {
-
-      Serial.print("Other Node: ");
-      Serial.println(rc.data);
-
-    } else {
-
-      Serial.print("Receive error: ");
-      Serial.println(rc.status.getResponseDescription());
     }
   }
 }
