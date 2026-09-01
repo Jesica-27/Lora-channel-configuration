@@ -64,6 +64,9 @@ LoRa_E220 e220ttl(
 #define ASMI_ADDH  0
 #define ASMI_ADDL  3
 
+#define KAVIN_ADDH  0
+#define KAVIN_ADDL  4
+
 // ============================================================
 // BLE UUIDs
 // ============================================================
@@ -109,7 +112,7 @@ const uint8_t AES_KEY[32] = {
 
 BLECharacteristic *txCharacteristic = nullptr;
 
-bool deviceConnected = false;
+bool deviceConnected = false;  
 
 // ============================================================
 // HEX DIGIT
@@ -692,6 +695,12 @@ bool getDestinationAddress(
 
     return true;
   }
+  if (name == "KAVIN")
+  {
+    addH = KAVIN_ADDH;
+    addL = KAVIN_ADDL;
+    return true;
+  }
 
   return false;
 }
@@ -983,6 +992,9 @@ class RxCallbacks :
 
       Serial.println(
         "Use: THANU|Hello"
+      );
+      Serial.println(
+        "Use: KAVIN|Hello"
       );
 
       return;
@@ -1511,4 +1523,3 @@ void loop()
 
   delay(5);
 }
-
