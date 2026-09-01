@@ -16,7 +16,7 @@
 // ============================================================
 
 // THANU = Node 1
-#define NODE_ID 1
+#define NODE_ID 4
 
 // JESS = Node 2
 // #define NODE_ID 2
@@ -81,6 +81,11 @@ void setup()
     Serial.println("Node: ASMI");
     Serial.println("Address: 0,3");
   }
+  else if (NODE_ID == 4)
+  {
+    Serial.println("Node: KAVIN");
+    Serial.println("Address: 0,4");
+  }
 
 
   // ==========================================================
@@ -133,6 +138,10 @@ void setup()
   else if (NODE_ID == 3)
   {
     configuration.ADDL = 3;
+  }
+   else if (NODE_ID == 4)
+  {
+    configuration.ADDL = 4;
   }
 
 
@@ -288,6 +297,12 @@ void setup()
     if (NODE_ID == 3 &&
         verify.ADDH == 0 &&
         verify.ADDL == 3)
+    {
+      addressOK = true;
+    }
+    if (NODE_ID == 4 &&
+        verify.ADDH == 0 &&
+        verify.ADDL == 4)
     {
       addressOK = true;
     }
