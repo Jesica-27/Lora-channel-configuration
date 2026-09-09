@@ -1,0 +1,38 @@
+#include <HardwareSerial.h>
+
+HardwareSerial E220Serial(1);
+
+#define AUX_PIN 5
+#define M1_PIN  6
+#define M0_PIN  7
+
+void setup()
+{
+    Serial.begin(115200);
+
+    pinMode(AUX_PIN, INPUT);
+    pinMode(M1_PIN, OUTPUT);
+    pinMode(M0_PIN, OUTPUT);
+
+    // E220 normal transparent mode
+    digitalWrite(M1_PIN, LOW);
+    digitalWrite(M0_PIN, LOW);
+
+    E220Serial.begin(9600);
+
+    delay(1000);
+
+    Serial.println("================================");
+    Serial.println(" VEGA ARIES v2.0 E220 RECEIVER");
+    Serial.println("================================");
+    Serial.println("Waiting for data...");
+}
+
+void loop()
+{
+    while (E220Serial.available())
+    {
+        char c = E220Serial.read();
+        Serial.write(c);
+    }
+}
