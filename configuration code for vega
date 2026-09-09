@@ -1,0 +1,335 @@
+#include <HardwareSerial.h>
+
+// =====================================================
+// VEGA ARIES v2.0 + E220-900T22D
+//
+// E220 TX  -> ARIES UART1 RX -> J2-15
+// E220 RX  -> ARIES UART1 TX -> J2-13
+//
+// E220 AUX -> ARIES GPIO5
+// E220 M1  -> ARIES GPIO6
+// E220 M0  -> ARIES GPIO7
+// =====================================================
+
+HardwareSerial E220Serial(1);
+
+// E220 control pins
+#define AUX_PIN 5
+#define M1_PIN  6
+#define M0_PIN  7
+
+
+// =====================================================
+// Wait until AUX becomes HIGH
+// =====================================================
+bool waitForAUX()
+{
+  unsigned long start = millis();
+
+  while (digitalRead(AUX_PIN) == LOW)
+  {
+    if (millis() - start > 5000)
+    {
+      return false;
+    }
+  }
+
+  // E220 recommends waiting after AUX becomes HIGH
+  delay(20);
+
+  return true;
+}
+
+
+// =====================================================
+// Print received bytes
+// =====================================================
+void printE220Response()
+{
+  unsigned long start = millis();
+  bool received = false;
+
+  while (millis() - start < 1000)
+  {
+    while (E220Serial.available())
+    {
+      uint8_t b = E220Serial.read();
+
+      received = true;
+
+      if (b < 0x10)
+        Serial.print("0");
+
+      Serial.print(b, HEX);
+      Serial.print(" ");
+    }
+  }
+
+  Serial.println();
+
+  if (!received)
+  {
+    Serial.println("NO RESPONSE FROM E220");
+  }
+}
+
+
+// =====================================================
+// SETUP
+// =====================================================
+void setup()
+{
+  // ---------------------------------------------------
+  // UART0 - USB Serial Monitor
+  // ---------------------------------------------------
+  Serial.begin(115200);
+
+  // ---------------------------------------------------
+  // UART1 - E220
+  // ---------------------------------------------------
+  E220Serial.begin(9600);
+
+  // ---------------------------------------------------
+  // E220 control pins
+  // ---------------------------------------------------
+  pinMode(AUX_PIN, INPUT);
+  pinMode(M1_PIN, OUTPUT);
+  pinMode(M0_PIN, OUTPUT);
+
+  delay(1000);
+
+  Serial.println();
+  Serial.println("==========================================");
+  Serial.println(" VEGA ARIES v2.0");
+  Serial.println(" E220-900T22D CONFIGURATION");
+  Serial.println("==========================================");
+
+  // ===================================================
+  // STEP 1: NORMAL INITIAL STATE
+  // ===================================================
+
+  digitalWrite(M1_PIN, LOW);
+  digitalWrite(M0_PIN, LOW);
+
+  delay(100);
+
+  Serial.print("AUX in normal mode: ");
+  Serial.println(digitalRead(AUX_PIN));
+
+
+  // ===================================================
+  // STEP 2: ENTER CONFIGURATION MODE
+  //
+  // E220 Mode 3:
+  //
+  // M1 = HIGH
+  // M0 = HIGH
+  //
+  // ===================================================
+
+  Serial.println();
+  Serial.println("Entering configuration mode...");
+
+  // Change mode only when module is idle
+  if (digitalRead(AUX_PIN) == LOW)
+  {
+    if (!waitForAUX())
+    {
+      Serial.println("ERROR: AUX timeout.");
+      return;
+    }
+  }
+
+  digitalWrite(M1_PIN, HIGH);
+  digitalWrite(M0_PIN, HIGH);
+
+  delay(100);
+
+  if (!waitForAUX())
+  {
+    Serial.println("ERROR: E220 did not enter configuration mode.");
+    return;
+  }
+
+  Serial.println("Configuration mode OK.");
+
+
+  // ===================================================
+  // STEP 3: CLEAR UART RX BUFFER
+  // ===================================================
+
+  while (E220Serial.available())
+  {
+    E220Serial.read();
+  }
+
+
+  // ===================================================
+  // STEP 4: E220 CONFIGURATION
+  //
+  // ADDH = 00
+  // ADDL = 00
+  //
+  // REG0 = 62
+  //
+  //   UART = 9600
+  //   Parity = 8N1
+  //   Air data = 2.4 kbps
+  //
+  // REG1 = 00
+  //
+  //   Sub-packet = 200 bytes
+  //   RSSI byte = disabled
+  //   TX power = 22 dBm
+  //
+  // REG2 = 12
+  //
+  //   Channel = 18
+  //   Frequency = 868.125 MHz
+  //
+  // REG3 = 00
+  //
+  //   Transparent transmission
+  //   RSSI byte disabled
+  //   LBT disabled
+  //
+  // ===================================================
+
+  uint8_t configCommand[] =
+  {
+    0xC0,   // Write configuration
+    0x00,   // Starting address
+    0x06,   // Number of registers
+
+    0x00,   // ADDH
+    0x00,   // ADDL
+    0x62,   // REG0
+    0x00,   // REG1
+    0x12,   // REG2 = Channel 18
+    0x00    // REG3 = Transparent
+  };
+
+
+  Serial.println();
+  Serial.println("Sending E220 configuration:");
+
+  for (uint8_t i = 0; i < sizeof(configCommand); i++)
+  {
+    if (configCommand[i] < 0x10)
+      Serial.print("0");
+
+    Serial.print(configCommand[i], HEX);
+    Serial.print(" ");
+  }
+
+  Serial.println();
+
+
+  // Send command
+  E220Serial.write(
+    configCommand,
+    sizeof(configCommand)
+  );
+
+  E220Serial.flush();
+
+  delay(500);
+
+
+  // ===================================================
+  // STEP 5: READ WRITE RESPONSE
+  // ===================================================
+
+  Serial.println();
+  Serial.println("Write response:");
+
+  printE220Response();
+
+
+  // ===================================================
+  // STEP 6: READ CONFIGURATION BACK
+  // ===================================================
+
+  while (E220Serial.available())
+  {
+    E220Serial.read();
+  }
+
+  uint8_t readCommand[] =
+  {
+    0xC1,   // Read configuration
+    0x00,   // Starting address
+    0x06    // Read 6 registers
+  };
+
+  Serial.println();
+  Serial.println("Reading configuration back...");
+
+  E220Serial.write(
+    readCommand,
+    sizeof(readCommand)
+  );
+
+  E220Serial.flush();
+
+  delay(500);
+
+  Serial.println("Read response:");
+
+  printE220Response();
+
+
+  // ===================================================
+  // STEP 7: RETURN TO NORMAL TRANSPARENT MODE
+  //
+  // M1 = LOW
+  // M0 = LOW
+  //
+  // Mode 0 = Transparent transmission
+  // ===================================================
+
+  Serial.println();
+  Serial.println("Returning to normal mode...");
+
+  digitalWrite(M1_PIN, LOW);
+  digitalWrite(M0_PIN, LOW);
+
+  delay(100);
+
+  if (!waitForAUX())
+  {
+    Serial.println("ERROR: E220 did not return to normal mode.");
+    return;
+  }
+
+
+  // ===================================================
+  // FINAL INFORMATION
+  // ===================================================
+
+  Serial.println();
+  Serial.println("==========================================");
+  Serial.println(" E220 CONFIGURATION COMPLETE");
+  Serial.println("==========================================");
+
+  Serial.println("ADDH          : 0x00");
+  Serial.println("ADDL          : 0x00");
+  Serial.println("UART          : 9600 8N1");
+  Serial.println("Air Data Rate : 2.4 kbps");
+  Serial.println("Channel       : 18");
+  Serial.println("Frequency     : 868.125 MHz");
+  Serial.println("TX Power      : 22 dBm");
+  Serial.println("Mode          : Transparent");
+  Serial.println("M1            : LOW");
+  Serial.println("M0            : LOW");
+
+  Serial.println("==========================================");
+}
+
+
+// =====================================================
+// LOOP
+// =====================================================
+void loop()
+{
+}
