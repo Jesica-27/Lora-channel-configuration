@@ -1,0 +1,31 @@
+#include <HardwareSerial.h>
+
+HardwareSerial Bluetooth(2);
+
+void setup()
+{
+    Serial.begin(115200);
+    Bluetooth.begin(9600);
+
+    Serial.println("================================");
+    Serial.println(" VEGA + HC-05 UART2 TEST");
+    Serial.println("================================");
+    Serial.println("Waiting for Bluetooth data...");
+}
+
+void loop()
+{
+    // HC-05 → VEGA → PC
+    while (Bluetooth.available())
+    {
+        char c = Bluetooth.read();
+        Serial.write(c);
+    }
+
+    // PC → VEGA → HC-05
+    while (Serial.available())
+    {
+        char c = Serial.read();
+        Bluetooth.write(c);
+    }
+}
