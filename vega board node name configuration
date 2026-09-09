@@ -1,0 +1,293 @@
+#include <HardwareSerial.h>
+
+// ============================================================
+// NODE CONFIGURATION
+// ============================================================
+
+// -------- CHANGE ONLY THIS --------
+
+// THANU = Node 1
+#define NODE_ID 4
+
+// JESS = Node 2
+// #define NODE_ID 2
+
+// ASMI = Node 3
+// #define NODE_ID 3
+
+// KAVIN = Node 4
+// #define NODE_ID 4
+
+
+// ============================================================
+// VEGA ARIES v2.0
+// E220 CONNECTION
+// ============================================================
+//
+// E220 TX  -> VEGA UART1 RX -> J2-15
+// E220 RX  -> VEGA UART1 TX -> J2-13
+// E220 M0  -> VEGA GPIO7
+// E220 M1  -> VEGA GPIO6
+// E220 AUX -> VEGA GPIO5
+//
+// ============================================================
+
+#define M0_PIN 7
+#define M1_PIN 6
+#define AUX_PIN 5
+
+
+// ============================================================
+// E220 UART1
+// ============================================================
+
+HardwareSerial E220Serial(1);
+
+
+// ============================================================
+// SET NODE NAME
+// ============================================================
+
+const char* getNodeName()
+{
+    if (NODE_ID == 1)
+        return "THANU";
+
+    if (NODE_ID == 2)
+        return "JESS";
+
+    if (NODE_ID == 3)
+        return "ASMI";
+
+    if (NODE_ID == 4)
+        return "KAVIN";
+
+    return "UNKNOWN";
+}
+
+
+// ============================================================
+// GET E220 ADDRESS
+// ============================================================
+
+int getNodeAddress()
+{
+    if (NODE_ID == 1)
+        return 1;
+
+    if (NODE_ID == 2)
+        return 2;
+
+    if (NODE_ID == 3)
+        return 3;
+
+    if (NODE_ID == 4)
+        return 4;
+
+    return 0;
+}
+
+
+// ============================================================
+// SET E220 CONFIGURATION MODE
+// ============================================================
+
+void enterConfigurationMode()
+{
+    digitalWrite(M0_PIN, HIGH);
+    digitalWrite(M1_PIN, HIGH);
+
+    delay(100);
+}
+
+
+// ============================================================
+// RETURN TO NORMAL MODE
+// ============================================================
+
+void enterNormalMode()
+{
+    digitalWrite(M0_PIN, LOW);
+    digitalWrite(M1_PIN, LOW);
+
+    delay(100);
+}
+
+
+// ============================================================
+// SETUP
+// ============================================================
+
+void setup()
+{
+    Serial.begin(115200);
+
+    delay(1000);
+
+    // --------------------------------------------------------
+    // GPIO
+    // --------------------------------------------------------
+
+    pinMode(M0_PIN, OUTPUT);
+    pinMode(M1_PIN, OUTPUT);
+    pinMode(AUX_PIN, INPUT);
+
+    // Start in normal mode
+    enterNormalMode();
+
+
+    // --------------------------------------------------------
+    // UART1
+    // --------------------------------------------------------
+
+    E220Serial.begin(9600);
+
+    delay(500);
+
+
+    // --------------------------------------------------------
+    // DISPLAY NODE INFORMATION
+    // --------------------------------------------------------
+
+    Serial.println();
+    Serial.println("======================================");
+    Serial.println("       VEGA E220 NODE CONFIGURATION");
+    Serial.println("======================================");
+
+    Serial.print("Node ID   : ");
+    Serial.println(NODE_ID);
+
+    Serial.print("Node Name : ");
+    Serial.println(getNodeName());
+
+    Serial.print("E220 ADDH : 0");
+
+    Serial.print("  ADDL : ");
+    Serial.println(getNodeAddress());
+
+
+    // --------------------------------------------------------
+    // ENTER CONFIGURATION MODE
+    // --------------------------------------------------------
+
+    Serial.println();
+    Serial.println("Entering E220 configuration mode...");
+
+    enterConfigurationMode();
+
+    Serial.println("Configuration mode entered.");
+
+
+    // --------------------------------------------------------
+    // SEND E220 CONFIGURATION
+    // --------------------------------------------------------
+    //
+    // Address:
+    //   ADDH = 0
+    //   ADDL = NODE_ID
+    //
+    // Channel:
+    //   18 = 868.125 MHz
+    //
+    // UART:
+    //   9600 8N1
+    //
+    // Air data rate:
+    //   2.4 kbps
+    //
+    // Power:
+    //   22 dBm
+    //
+    // Transparent transmission
+    //
+    // --------------------------------------------------------
+
+    byte config[] =
+    {
+        0xC0,
+        0x00,
+        (byte)getNodeAddress(),
+        0x62,
+        0x00,
+        0x12,
+        0x00
+    };
+
+    Serial.println();
+    Serial.println("Writing E220 configuration...");
+
+    E220Serial.write(config, sizeof(config));
+
+    E220Serial.flush();
+
+    delay(500);
+
+
+    // --------------------------------------------------------
+    // READ RESPONSE
+    // --------------------------------------------------------
+
+    Serial.println();
+    Serial.println("E220 response:");
+
+    while (E220Serial.available())
+    {
+        byte b = E220Serial.read();
+
+        if (b < 0x10)
+            Serial.print("0");
+
+        Serial.print(b, HEX);
+        Serial.print(" ");
+    }
+
+    Serial.println();
+
+
+    // --------------------------------------------------------
+    // RETURN TO NORMAL MODE
+    // --------------------------------------------------------
+
+    Serial.println();
+    Serial.println("Returning E220 to normal mode...");
+
+    enterNormalMode();
+
+
+    // --------------------------------------------------------
+    // FINAL INFORMATION
+    // --------------------------------------------------------
+
+    Serial.println();
+    Serial.println("======================================");
+    Serial.println("       CONFIGURATION COMPLETE");
+    Serial.println("======================================");
+
+    Serial.print("Node ID        : ");
+    Serial.println(NODE_ID);
+
+    Serial.print("Node Name      : ");
+    Serial.println(getNodeName());
+
+    Serial.print("E220 Address   : 0,");
+    Serial.println(getNodeAddress());
+
+    Serial.println("Channel        : 18");
+
+    Serial.println("Frequency      : 868.125 MHz");
+
+    Serial.println("Air Data Rate  : 2.4 kbps");
+
+    Serial.println("UART           : 9600 8N1");
+
+    Serial.println("Power          : 22 dBm");
+
+    Serial.println("Mode           : Transparent");
+
+    Serial.println("======================================");
+}
+
+
+void loop()
+{
+}
