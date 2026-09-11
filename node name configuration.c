@@ -16,13 +16,16 @@
 // ============================================================
 
 // THANU = Node 1
-#define NODE_ID 4
+#define NODE_ID 2
 
 // JESS = Node 2
 // #define NODE_ID 2
 
 // ASMI = Node 3
 // #define NODE_ID 3
+
+// KAVIN = Node 4
+// #define NODE_ID 4
 
 
 // ============================================================
@@ -139,7 +142,7 @@ void setup()
   {
     configuration.ADDL = 3;
   }
-   else if (NODE_ID == 4)
+  else if (NODE_ID == 4)
   {
     configuration.ADDL = 4;
   }
@@ -180,12 +183,11 @@ void setup()
 
 
   // ==========================================================
-  // VERY IMPORTANT
-  // FIXED TRANSMISSION
+  // TRANSPARENT TRANSMISSION
   // ==========================================================
 
   configuration.TRANSMISSION_MODE.fixedTransmission =
-      FT_FIXED_TRANSMISSION;
+      FT_TRANSPARENT_TRANSMISSION;
 
 
   // ==========================================================
@@ -265,7 +267,7 @@ void setup()
     Serial.println("Transmit Power: 22 dBm");
 
 
-    Serial.println("Transmission Mode: FIXED");
+    Serial.println("Transmission Mode: TRANSPARENT");
 
 
     Serial.println("======================================");
@@ -300,6 +302,8 @@ void setup()
     {
       addressOK = true;
     }
+
+
     if (NODE_ID == 4 &&
         verify.ADDH == 0 &&
         verify.ADDL == 4)
