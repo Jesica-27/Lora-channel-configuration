@@ -24,9 +24,6 @@
 // ASMI = Node 3
 // #define NODE_ID 3
 
-// KAVIN = Node 4
-// #define NODE_ID 4
-
 
 // ============================================================
 // E220 SERIAL
@@ -142,7 +139,7 @@ void setup()
   {
     configuration.ADDL = 3;
   }
-  else if (NODE_ID == 4)
+   else if (NODE_ID == 4)
   {
     configuration.ADDL = 4;
   }
@@ -183,11 +180,12 @@ void setup()
 
 
   // ==========================================================
-  // TRANSPARENT TRANSMISSION
+  // VERY IMPORTANT
+  // FIXED TRANSMISSION
   // ==========================================================
 
   configuration.TRANSMISSION_MODE.fixedTransmission =
-      FT_TRANSPARENT_TRANSMISSION;
+      FT_FIXED_TRANSMISSION;
 
 
   // ==========================================================
@@ -267,7 +265,7 @@ void setup()
     Serial.println("Transmit Power: 22 dBm");
 
 
-    Serial.println("Transmission Mode: TRANSPARENT");
+    Serial.println("Transmission Mode: FIXED");
 
 
     Serial.println("======================================");
@@ -302,8 +300,6 @@ void setup()
     {
       addressOK = true;
     }
-
-
     if (NODE_ID == 4 &&
         verify.ADDH == 0 &&
         verify.ADDL == 4)
